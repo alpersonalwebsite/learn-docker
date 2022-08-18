@@ -1,23 +1,5 @@
 # Docker
 
-<!--
-TODO:
-
-- Architecture
-  It has a CLIENT and a SERVER (Docker Engine)
-
-In MAC docker uses a light VM? 
-MAC kernel doesnt have support for containarized apps?
-
-We take an application and dockerized using a Dockerfile. With this, docker will be able to package the application into a docker image which will be used to start a container.
-
-We can version our docker images like with Docker Registry
-
-Containers vs Virtual Machines
-Every vm is a standalone machine running on top of our machine
-
--->
-
 ## Installing docker
 
 Go to https://docs.docker.com/get-docker/ and download `Docker Desktop` (for Mac or Windows) or `Docker Engine` (Linux).
@@ -59,37 +41,36 @@ Server: Docker Engine - Community
   GitCommit:        de40ad0
 ```
 
-## Sample hello-world application
-More info: https://docs.docker.com/get-started/02_our_app/
+## Sample `hello-world application`
 
-We are going to `dockerized a basic application`:
+We are going to `dockerized a basic Express application`:
 
 ### Create the application
 
 ```shell
-mkdir docker-hello-world
 cd docker-hello-world
-nano index.js
+npm install
 ```
-
-Add: `console.log('Hello World');`
-Save: Control + o and then Enter
-Exit: Control + x
 
 ### Add the Dockerfile
 
 Dockerfile
+
 ```Dockerfile
 # Base image. In this case is node alpine lts which is based on linux image
 FROM node:lts-alpine
 
-# Copy all our files (.) in the current directory to the /app directory
-COPY . /app
-
+# Copy all our files in src to the /app directory
 WORKDIR /app
+COPY package*.json ./
+COPY src .
+
+RUN npm install
+
+EXPOSE 3000
 
 # Run our app
-CMD node index.js
+CMD ["npm", "start"]
 ```
 
 ### Build and tag docker image
@@ -112,6 +93,33 @@ docker build -t docker-hello-world:3 .
 docker image tag docker-hello-world:3 docker-hello-world:latest
 ```
 
+### Running the container
+
+```shell
+docker run -p 8080:3000 docker-hello-world
+```
+
+#### Test
+
+```shell
+curl -i localhost:8080
+```
+
+Output:
+
+```shell
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: text/html; charset=utf-8
+Content-Length: 12
+ETag: W/"c-Lve95gjOVATpfV8EL5X4nxwjKHE"
+Date: Tue, 16 Aug 2022 16:19:37 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+```
+
+### Other useful commands
+
 **Listing docker images**
 
 ```shell
@@ -122,6 +130,25 @@ Sample output:
 ```
 REPOSITORY                                                      TAG             IMAGE ID       CREATED              SIZE
 docker-hello-world                                              latest          22c6c6f3e99f   About a minute ago   111MB
+```
+
+**Searching for images**
+
+```shell
+docker search term
+```
+
+Sample output for `nginx`
+
+```shell
+NAME                                              DESCRIPTION                                     STARS     OFFICIAL   AUTOMATED
+nginx                                             Official build of Nginx.                        17264     [OK]       
+linuxserver/nginx                                 An Nginx container, brought to you by LinuxS…   173                  
+bitnami/nginx                                     Bitnami nginx Docker Image                      139                  [OK]
+ubuntu/nginx                                      Nginx, a high-performance reverse proxy & we…   56                   
+bitnami/nginx-ingress-controller                  Bitnami Docker Image for NGINX Ingress Contr…   19                   [OK]
+rancher/nginx-ingress-controller                                                                  10                   
+webdevops/nginx                                   Nginx container                                 9                    [OK]
 ```
 
 **Show history of an image**
@@ -154,6 +181,9 @@ docker image prune
 **Deleting images**
 
 ```shell
+# Remember to delete first the container
+# docker container rm docker-hello-world
+
 docker image rm docker-hello-world
 ```
 

@@ -1,5 +1,10 @@
 # Dockerfile
-Instructions for building the docker image.
+Instructions for building a docker image.
+
+<!-- 
+  TODO:
+    Docker multi-stage builds
+-->
 
 ## Creating your Dockerfile
 
@@ -69,8 +74,17 @@ RUN npm install
 
 ### ENV (setting env variables)
 
+Single:
+
 ```shell
-ENV name=value
+ENV NAME1=value
+```
+
+Multiple:
+
+```shell
+ENV NAME1=value1 \
+    NAME2=value2
 ```
 
 ### PORT (exposing the port of the container)
@@ -124,7 +138,13 @@ WORKDIR /app
 RUN mkdir data
 COPY . .
 RUN npm install
-ENV stage=development
+ENV STAGE=development
 EXPOSE 9090
 CMD ["npm", "start"]
+```
+
+Then, we can build the image:
+
+```shell
+docker build -t image-name .
 ```
