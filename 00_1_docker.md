@@ -151,7 +151,7 @@ rancher/nginx-ingress-controller                                                
 webdevops/nginx                                   Nginx container                                 9                    [OK]
 ```
 
-**Show history of an image**
+**Show the history of an image**
 
 ```shell
 docker history node:alpine
