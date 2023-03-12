@@ -8,7 +8,7 @@ Instructions for building a docker image.
 
 ## Creating your Dockerfile
 
-To take advantage of Docker layer caching (and reduce time when building the docker image), we should always have the instructions that don't often change at the top, and those that change frequently, at the bottom.
+To take advantage of Docker layer caching (and reduce time when building the docker image), we should always have the instructions that don't often change at the top and those that change frequently, at the bottom.
 
 ### FROM (base image for our application)
 
@@ -47,7 +47,7 @@ WORKDIR /app
 COPY src .
 ```
 
-We can also use `ADD` which will allow use to copy a file from a URL and/or uncompress a compressed file and add it to the directory.
+We can also use `ADD` which will allow us to copy a file from a URL and/or uncompress a compressed file and add it to the directory.
 
 ```Dockerfile
 ADD your-full-url/file.ext .
