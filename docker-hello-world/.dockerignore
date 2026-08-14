@@ -1,0 +1,15 @@
+# Keeps the build context small and stops local artefacts reaching the image. The COPY lines in
+# the Dockerfile are already selective, so this is belt-and-braces rather than the only defence,
+# but it also speeds up the build: everything here is otherwise sent to the daemon.
+node_modules/
+npm-debug.log*
+.env
+.env.*
+*.log
+.git
+.gitignore
+Dockerfile
+.dockerignore
+README.md
+coverage/
+.DS_Store

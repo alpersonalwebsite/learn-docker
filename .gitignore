@@ -1,2 +1,38 @@
+# Personal scratch notes, kept out of the published set.
 00_xx*
+
+# node_modules anywhere in the tree. This pattern was already here and it does work: verified
+# with git check-ignore that both ./node_modules/... and docker-hello-world/node_modules/... are
+# ignored.
 **node_modules
+
+# Credentials and secrets. None of these existed before, and a repository whose walkthroughs
+# have you passing environment variables into containers is exactly one where a stray .env can
+# appear.
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*
+secrets/
+.aws/
+
+# Build and run output.
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
+
+# Docker artefacts the notes tell you to create: `docker image save -o <name>.tar` writes one of
+# these into the working directory.
+*.tar
+
+# Editor and OS noise.
+.idea/
+.vscode/
+.DS_Store
+*.sqlite
+*.db
+__pycache__/
