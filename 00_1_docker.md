@@ -2,12 +2,16 @@
 
 ## Installing docker
 
-Go to https://docs.docker.com/get-docker/ and download `Docker Desktop` (for Mac or Windows) or `Docker Engine` (Linux).
-You can also use `Docker Toolbox` for older systems.
+Go to https://docs.docker.com/get-started/get-docker/ and install `Docker Desktop` (macOS, Windows,
+Linux) or `Docker Engine` (Linux, no desktop app).
+
+`Docker Toolbox`, which earlier versions of these notes suggested for older systems, is **retired**:
+`docs.docker.com/toolbox/` now redirects to `docs.docker.com/retired/`. It was the boot2docker-based
+predecessor to Docker Desktop and should not be used for anything new.
 
 After installation, run `docker version`.
 
-Sample output:
+Sample output, recorded on the original run in 2021 and left as-is; yours will differ:
 
 ```shell
 Client: Docker Engine - Community
@@ -49,29 +53,42 @@ We are going to `dockerized a basic Express application`:
 
 ```shell
 cd docker-hello-world
-npm install
+npm ci
 ```
+
+`npm ci` rather than `npm install`, since a lockfile is committed: it installs exactly what the
+lockfile pins and fails if `package.json` disagrees with it.
 
 ### Add the Dockerfile
 
 Dockerfile
 
 ```Dockerfile
-# Base image. In this case is node alpine lts which is based on linux image
-FROM node:lts-alpine
+FROM node:24-alpine3.24
 
-# Copy all our files in src to the /app directory
 WORKDIR /app
-COPY package*.json ./
+
+# Manifests first, then install, then the source: editing src/ must not invalidate the install layer.
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
 COPY src .
 
-RUN npm install
-
+# Metadata only. EXPOSE publishes nothing; -p at run time does.
 EXPOSE 3000
 
-# Run our app
-CMD ["npm", "start"]
+# Unprivileged user the official image provides.
+USER node
+
+# See the signals section in 00_2_Dockerfile.md: src/index.js handles SIGTERM, which is what makes
+# this form stop promptly.
+CMD ["node", "index.js"]
 ```
+
+The committed file at [`docker-hello-world/Dockerfile`](docker-hello-world/Dockerfile) carries the
+full reasoning for each line. Earlier versions of these notes showed `FROM node:lts-alpine`, copied
+the source before installing, ran as root and used `CMD ["npm", "start"]`; `00_2_Dockerfile.md`
+explains what each of those costs.
 
 ### Build and tag docker image
 
@@ -190,8 +207,12 @@ docker image rm docker-hello-world
 **Saving image into a compressed file**
 
 ```shell
-docker image save -o docker-hello-world.tar docker-hello-world:2
+docker image save -o docker-hello-world.tar docker-hello-world:1
 ```
+
+(`:1` because that is the tag created above. The earlier version of this line referred to `:2`, which
+none of these commands ever creates, so it failed with `Error response from daemon: reference does not
+exist`.)
 
 **Loading the image**
 
