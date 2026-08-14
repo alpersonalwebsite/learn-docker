@@ -222,18 +222,33 @@ Changes from the version these notes used to show, and why:
 grace period depends on something unintuitive: **Linux gives PID 1 no default signal dispositions.**
 A normal process is killed by an unhandled `SIGTERM`; PID 1 ignores it.
 
-Timed on `docker-hello-world`, how long `docker stop` took to return:
+Measured on `docker-hello-world`, three runs each, with a millisecond timer:
 
-| `CMD` | run as | `docker stop` |
+| `CMD` / run | `docker stop` | container exit code |
 | --- | --- | --- |
-| `["npm", "start"]` | npm is PID 1 | **1s** (npm installs its own handlers) |
-| `["node", "index.js"]` | node is PID 1, no handler | **10s** (SIGTERM ignored, then killed) |
-| `["node", "index.js"]` | node is PID 1, app handles SIGTERM | **0s** |
-| `["node", "index.js"]` + `docker run --init` | tini is PID 1 | **0s** |
+| `["npm", "start"]`, no handler | ~0.70s | **1** — npm logs `npm error signal SIGTERM` and fails |
+| `["node", "index.js"]`, no handler | **~10.26s** | **137** (128+9, SIGKILL) |
+| `["node", "index.js"]`, no handler, `docker run --init` | ~0.18s | **143** (128+15, SIGTERM) |
+| `["node", "index.js"]` + SIGTERM handler | ~0.19s | **0** |
 
-So "use the exec form and call the binary directly" is good advice for having one process instead of
-two, and by itself it made shutdown ten times slower here. Either the app handles the signal, which
-is what `docker-hello-world/src/index.js` does:
+Two things to read out of that, and the second is the one that matters:
+
+**The timing difference between `npm start` and a handled `node` process is negligible** — 0.70s
+against 0.19s. An earlier version of this section implied `npm start` was slow to stop, which came
+from timing with whole-second resolution and reading 1s against 0s as a difference. It is not one.
+npm does forward the signal.
+
+**What actually differs is the exit code.** Stopping the `npm start` container is reported as a
+*failure*: exit 1, with `npm error command failed` / `npm error signal SIGTERM` in the logs, on every
+ordinary stop. That is what an orchestrator, a `docker wait`, a restart policy or a CI step sees. Only
+the app-handled case exits 0.
+
+The 10-second row is the real trap, and it is the state you land in by switching to the exec form
+*without* adding a handler: SIGTERM is ignored, Docker waits out the grace period, then SIGKILL, exit
+137. `--init` avoids the wait by putting tini at PID 1 to forward the signal, but the process is still
+terminated by it rather than exiting cleanly, hence 143.
+
+So the app handles the signal, which is what `docker-hello-world/src/index.js` does:
 
 ```js
 const server = app.listen(port)

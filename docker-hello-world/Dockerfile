@@ -37,15 +37,19 @@ USER node
 # Exec form, calling node directly rather than through npm, so there is one process instead of
 # two and node is PID 1.
 #
-# That alone does NOT give you a graceful stop, which is the opposite of what I first assumed
-# here. Linux applies no default signal dispositions to PID 1, so node ignores SIGTERM unless
-# the app handles it. Measured, time for `docker stop` to return:
+# That alone does NOT give you a graceful stop. Linux applies no default signal dispositions to
+# PID 1, so node ignores SIGTERM unless the app handles it. Measured, `docker stop` duration and
+# the container's exit code:
 #
-#   CMD ["npm", "start"]                     1s   npm installs its own handlers
-#   CMD ["node", "index.js"], no handler    10s   SIGTERM ignored, then SIGKILL
-#   CMD ["node", "index.js"], with handler   0s   <- this file, plus src/index.js
-#   CMD ["node", "index.js"] + --init        0s   tini is PID 1 and forwards
+#   CMD ["npm", "start"], no handler        0.70s  exit 1    npm reports SIGTERM as a failure
+#   CMD ["node", "index.js"], no handler   10.26s  exit 137  ignored, then SIGKILL
+#   CMD ["node", "index.js"] + --init       0.18s  exit 143  tini forwards; still signalled
+#   CMD ["node", "index.js"] + handler      0.19s  exit 0    <- this file, plus src/index.js
 #
-# src/index.js installs the SIGTERM and SIGINT listeners that make this form correct. Switching
-# to the exec form WITHOUT them is a regression from the original `npm start`.
+# The gain over `npm start` is NOT speed: 0.70s against 0.19s is not a difference worth claiming,
+# and an earlier version of this comment claimed it from second-resolution timing. It is the exit
+# code. `npm start` reports a failed exit on every ordinary stop; this form exits 0.
+#
+# Switching to the exec form WITHOUT the handler in src/index.js is a clear regression: 10s and
+# exit 137 instead of 0.7s and exit 1.
 CMD ["node", "index.js"]

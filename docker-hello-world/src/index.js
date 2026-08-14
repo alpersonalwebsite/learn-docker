@@ -17,14 +17,15 @@ const server = app.listen(port, () => {
 // listener below, `docker stop` sends SIGTERM, nothing happens, and Docker waits out its
 // 10-second grace period before SIGKILL.
 //
-// Measured on this app, time for `docker stop` to return:
-//   CMD ["npm", "start"]                       1s   (npm installs its own handlers)
-//   CMD ["node", "index.js"], no handler      10s   (SIGTERM ignored, then killed)
-//   CMD ["node", "index.js"], with handler     0s
-//   CMD ["node", "index.js"] + docker --init   0s   (tini becomes PID 1 and forwards)
+// Measured on this app, `docker stop` duration and the container's exit code:
+//   CMD ["npm", "start"], no handler        0.70s  exit 1    npm reports SIGTERM as a failure
+//   CMD ["node", "index.js"], no handler   10.26s  exit 137  ignored, then SIGKILL
+//   CMD ["node", "index.js"] + --init       0.18s  exit 143  tini forwards; still signalled
+//   CMD ["node", "index.js"] + this file    0.19s  exit 0
 //
-// So the exec form alone is not the fix people assume it is. Either the app handles the signal,
-// as here, or something like tini has to be PID 1.
+// So the exec form alone is not the fix people assume it is, and the win over `npm start` is the
+// clean exit 0 rather than any real speed difference. Either the app handles the signal, as here,
+// or something like tini has to be PID 1.
 for (const signal of ['SIGTERM', 'SIGINT']) {
   process.on(signal, () => {
     console.log(`${signal} received, closing server`)
