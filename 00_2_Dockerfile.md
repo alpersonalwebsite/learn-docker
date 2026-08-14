@@ -18,10 +18,22 @@ year can fail today for reasons nothing in your repository explains. Measured, t
 Node 24.19 on Alpine 3.24 today. It pointed at a different major when these notes were written in
 2022, which is the whole problem: the Dockerfile does not record which.
 
-Pinning is a spectrum: `node:24-alpine3.24` fixes the major and the distro, `node:24.19-alpine3.24`
-the minor, and `node:24-alpine3.24@sha256:...` the exact image. The stricter the pin, the more
-deliberate the upgrades and the more manual bumps. A pin also does not protect you from the host
-changing underneath it, which `00_4_docker-compose.md` has a worked example of.
+Pinning is a spectrum, and only the last rung is actually immutable:
+
+| form | fixes | mutable? |
+| --- | --- | --- |
+| `node:lts-alpine` | nothing much | yes, follows whichever line is LTS |
+| `node:24-alpine3.24` | major and distro | **yes** — official images are rebuilt when their base or packages change |
+| `node:24.19-alpine3.24` | minor too | **yes**, same reason |
+| `node:24-alpine3.24@sha256:...` | the exact image | no |
+
+So an explicit tag is *more constrained* than `lts`, not reproducible. A rebuild months apart can
+pull different content from the same tag. Only a digest locks it, and the cost is that a digest needs
+an owner to refresh it: an unrefreshed digest means you also miss the security patches those rebuilds
+carry, which is the trade rather than a free win.
+
+A pin of any kind also does not protect you from the host changing underneath it.
+`00_4_docker-compose.md` has a worked example: `mongo:8.0` stopped working on a newer kernel.
 
 ### COPY and ADD (adding files)
 

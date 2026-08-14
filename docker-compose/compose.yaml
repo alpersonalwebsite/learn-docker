@@ -42,6 +42,12 @@ services:
     # (SERVER-121912). The Docker VM here runs 7.0.14, so 8.0 fails while 8.2 starts. Pinning
     # protects you from surprise upgrades; it does not protect you from the host moving underneath
     # the pin, which is why a pin needs an owner rather than being set once.
+    #
+    # And a tag is not immutable either: mongo:8.2 is rebuilt when its base changes, so this
+    # resolves to new content over time. For an actual lock, add the digest, which was
+    # sha256:e0ce8c35124d4a9f9785532d1f268f39e9728ffa1cb38f46fa482436424c4bd3 when this was
+    # written:  image: mongo:8.2@sha256:...
+    # Tags are used here for readability; see docker-hello-world/Dockerfile for the trade-off.
     image: mongo:8.2
     # Not published. The backend reaches it over the project network by service name, and
     # publishing 27017 to the host would expose an unauthenticated MongoDB on your machine.

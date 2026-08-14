@@ -1,8 +1,19 @@
 # Base image, pinned. `node:lts-alpine` was a moving target: the `lts` tag follows whichever
 # Node line is current, so the same Dockerfile built a different image every year. Measured
 # today it resolves to Node 24.19 on Alpine 3.24, and it meant something else when these notes
-# were written. An explicit tag is reproducible; `node:24-alpine3.24@sha256:...` is stricter
-# still, at the cost of a manual bump for every patch release.
+# were written.
+#
+# An explicit tag is MORE CONSTRAINED, not reproducible, and an earlier version of this comment
+# said reproducible, which is wrong. `node:24-alpine3.24` is still mutable: official images are
+# rebuilt when their base or packages change, so the same tag resolves to new content over time
+# and a rebuild months apart can differ. Only a digest is immutable:
+#
+#   FROM node:24-alpine3.24@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43
+#
+# That is what the tag resolved to when this was written. The trade is real: a digest pin needs an
+# owner to refresh it, and an unrefreshed digest means missing the security patches the rebuilds
+# carry. Tags are used here for readability, which is a deliberate choice for a notes repository
+# rather than a claim of reproducibility.
 FROM node:24-alpine3.24
 
 WORKDIR /app

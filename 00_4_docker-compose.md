@@ -13,9 +13,14 @@ docker compose version
 
 **`docker compose` (a space) is V2.** The old `docker-compose` (a hyphen) is the Python V1
 implementation, which reached end of life in July 2023; V2 ships as a plugin with Docker Desktop and
-current Docker Engine. The commands below use V2. If `docker compose version` fails but
-`docker-compose -v` works, you are on V1 and the `depends_on: condition:` syntax used here will not
-be available.
+current Docker Engine. Everything below uses V2.
+
+If `docker compose version` fails and only `docker-compose -v` works, you are on V1 and should
+upgrade rather than adapt these files: it is unsupported and receives no fixes. An earlier version of
+this section claimed V1 could not use the `depends_on: condition:` form at all, which overstates it:
+the long form existed in Compose file formats 2.1 to 2.4, was dropped in 3.x, and V2 accepts it
+regardless of version. Rather than describe which combinations parse under an end-of-life tool, the
+advice is simply to be on V2.
 
 ## Running it
 
