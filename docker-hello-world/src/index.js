@@ -54,10 +54,18 @@ const MAX_TIMEOUT_MS = 2147483647
 // looking configured. Out-of-range values fall back to the default and say so.
 function shutdownTimeoutMs() {
   const raw = process.env.SHUTDOWN_TIMEOUT_MS
-  if (raw === undefined || raw.trim() === '') return DEFAULT_SHUTDOWN_TIMEOUT_MS
+  // Only UNSET is silent. An empty or whitespace-only value is a configuration mistake, not an
+  // absent setting: something set the variable and produced nothing, which is worth saying out
+  // loud, so it falls through to the reporting branch below rather than being treated as unset.
+  if (raw === undefined) return DEFAULT_SHUTDOWN_TIMEOUT_MS
 
   const parsed = Number(raw)
-  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > MAX_TIMEOUT_MS) {
+  // `parsed < 1`, not `parsed <= 0`. This is the same defect one level further down, and it took
+  // three passes to stop reintroducing it: Number('0.5') is 0.5, which passed a `<= 0` check while
+  // sitting below the documented lower bound, and node normalises any sub-millisecond delay to a
+  // 1ms timer. So 0.5 was accepted and produced exactly the immediate kill this function exists to
+  // prevent. Measured: 0.5, 0.9 and 0.001 all passed the old check and fired effectively at once.
+  if (!Number.isFinite(parsed) || parsed < 1 || parsed > MAX_TIMEOUT_MS) {
     console.error(
       `SHUTDOWN_TIMEOUT_MS=${JSON.stringify(raw)} is not a usable delay ` +
         `(need 1..${MAX_TIMEOUT_MS}); falling back to ${DEFAULT_SHUTDOWN_TIMEOUT_MS}ms`,
