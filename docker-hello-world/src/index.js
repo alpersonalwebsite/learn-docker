@@ -37,7 +37,37 @@ const server = app.listen(port, () => {
 // The deadline has to sit below the stop timeout to be the thing that fires first. Exiting 1 on
 // that path is deliberate: a shutdown that dropped live requests is not a clean one, and an
 // orchestrator should be able to tell the difference.
-const SHUTDOWN_TIMEOUT_MS = Number(process.env.SHUTDOWN_TIMEOUT_MS || 5000)
+const DEFAULT_SHUTDOWN_TIMEOUT_MS = 5000
+// setTimeout stores its delay in a 32-bit signed integer.
+const MAX_TIMEOUT_MS = 2147483647
+
+// Validated, because setTimeout coerces anything it cannot use to a 1ms delay rather than
+// rejecting it, which turns this guard into an immediate kill: the precise opposite of its job.
+// Measured on node 24, with Node's own warnings naming each case:
+//
+//   SHUTDOWN_TIMEOUT_MS=abc          NaN   -> fires in ~1ms   TimeoutNaNWarning
+//   SHUTDOWN_TIMEOUT_MS=-1                 -> fires in ~2ms   TimeoutNegativeWarning
+//   SHUTDOWN_TIMEOUT_MS=0                  -> fires in ~2ms
+//   SHUTDOWN_TIMEOUT_MS=2147483648         -> fires in ~1ms   TimeoutOverflowWarning
+//
+// So a typo in an environment variable would drop every in-flight request instantly while still
+// looking configured. Out-of-range values fall back to the default and say so.
+function shutdownTimeoutMs() {
+  const raw = process.env.SHUTDOWN_TIMEOUT_MS
+  if (raw === undefined || raw.trim() === '') return DEFAULT_SHUTDOWN_TIMEOUT_MS
+
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > MAX_TIMEOUT_MS) {
+    console.error(
+      `SHUTDOWN_TIMEOUT_MS=${JSON.stringify(raw)} is not a usable delay ` +
+        `(need 1..${MAX_TIMEOUT_MS}); falling back to ${DEFAULT_SHUTDOWN_TIMEOUT_MS}ms`,
+    )
+    return DEFAULT_SHUTDOWN_TIMEOUT_MS
+  }
+  return parsed
+}
+
+const SHUTDOWN_TIMEOUT_MS = shutdownTimeoutMs()
 let shuttingDown = false
 
 for (const signal of ['SIGTERM', 'SIGINT']) {
