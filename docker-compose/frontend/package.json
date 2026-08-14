@@ -1,0 +1,14 @@
+{
+  "name": "compose-frontend",
+  "version": "1.0.0",
+  "description": "Minimal web tier for the Docker Compose example",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "node index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "4.18.1"
+  }
+}

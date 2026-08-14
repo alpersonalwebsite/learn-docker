@@ -1,0 +1,15 @@
+{
+  "name": "compose-backend",
+  "version": "1.0.0",
+  "description": "Minimal API for the Docker Compose example",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "start": "node index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "express": "4.18.1",
+    "mongodb": "6.20.0"
+  }
+}
